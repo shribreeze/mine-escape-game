@@ -186,3 +186,16 @@
 .pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
+
+/* RainbowKit custom styles */
+.rainbow-kit-wrapper button {
+  @apply px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg backdrop-blur-sm border border-cyan-400/30 hover:border-cyan-400/60 transition-all text-white font-medium;
+}
+
+.rainbow-kit-wrapper button:hover {
+  transform: scale(1.05);
+}
+
+.rainbow-kit-wrapper button:active {
+  transform: scale(0.95);
+}

@@ -1,90 +1,102 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Hammer,
   Diamond,
   Zap,
   Crown,
-  TrendingUp,
-  Users,
-  Wallet,
-  Menu,
-  X,
-  RotateCcw,
   Trophy,
-  Info,
-  Gift,
+  Wallet,
+  Play,
+  RotateCcw,
+  Clock,
+  Star,
+  AlertTriangle,
+  CheckCircle,
+  Volume2,
+  VolumeX
 } from "lucide-react"
+import { GameCanvas } from "@/components/GameCanvas"
+import { WalletConnect } from "@/components/WalletConnect"
+import { Leaderboard } from "@/components/Leaderboard"
+import { useGameStore } from "@/store/gameStore"
+import { useSound } from "@/hooks/useSound"
+import { useAccount } from 'wagmi'
+import { useLeaderboard } from '@/hooks/useLeaderboard'
+
+type GameState = "start" | "playing" | "gameOver" | "victory" | "leaderboard"
 
 export default function MineEscapeGame() {
-  const [gameState, setGameState] = useState<"playing" | "gameOver" | "escaped" | "idle">("idle")
-  const [depth, setDepth] = useState(0)
-  const [gems, setGems] = useState(0)
-  const [riskPercent, setRiskPercent] = useState(0)
-  const [lastItem, setLastItem] = useState<string>("")
-  const [discoveredItems, setDiscoveredItems] = useState<Array<{ type: string; icon: any; count: number }>>([])
-  const [showModal, setShowModal] = useState(false)
-  const [showBottomDrawer, setShowBottomDrawer] = useState(false)
+  const [gameState, setGameState] = useState<GameState>("start")
   const [isWalletConnected, setIsWalletConnected] = useState(false)
+  const { address, isConnected } = useAccount()
+  const { submitScore, isSubmitting, isConfirmed } = useLeaderboard()
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  
+  const {
+    score,
+    gems,
+    timeLeft,
+    playerPosition,
+    resetGame,
+    updateScore,
+    collectGem,
+    decrementTime
+  } = useGameStore()
 
-  const dig = () => {
-    if (gameState !== "playing" && gameState !== "idle") return
+  const { playSound } = useSound(soundEnabled)
 
+  // Game timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (gameState === "playing" && timeLeft > 0) {
+      interval = setInterval(() => {
+        decrementTime()
+        if (timeLeft <= 1) {
+          setGameState("gameOver")
+          playSound("gameOver")
+        }
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [gameState, timeLeft, decrementTime, playSound])
+
+  const startGame = () => {
+    resetGame()
     setGameState("playing")
-    const newDepth = Math.min(depth + Math.random() * 10, 100)
-    setDepth(newDepth)
-
-    // Simulate finding items
-    const items = ["gem", "bomb", "artifact"]
-    const foundItem = items[Math.floor(Math.random() * items.length)]
-
-    if (foundItem === "gem") {
-      setGems((prev) => prev + 1)
-      setLastItem("Rare Gem")
-    } else if (foundItem === "bomb") {
-      setLastItem("Dangerous Bomb")
-      setRiskPercent((prev) => Math.min(prev + 15, 100))
-    } else {
-      setLastItem("Ancient Artifact")
-    }
-
-    // Update discovered items
-    setDiscoveredItems((prev) => {
-      const existing = prev.find((item) => item.type === foundItem)
-      if (existing) {
-        return prev.map((item) => (item.type === foundItem ? { ...item, count: item.count + 1 } : item))
-      } else {
-        const iconMap = { gem: Diamond, bomb: Zap, artifact: Crown }
-        return [...prev, { type: foundItem, icon: iconMap[foundItem as keyof typeof iconMap], count: 1 }]
-      }
-    })
-
-    // Check game over conditions
-    if (riskPercent >= 85 && Math.random() > 0.7) {
-      setGameState("gameOver")
-      setShowModal(true)
-    } else if (newDepth >= 100) {
-      setGameState("escaped")
-      setShowModal(true)
-    }
+    playSound("start")
   }
 
-  const cashOut = () => {
-    if (depth < 20) return
-    setGameState("escaped")
-    setShowModal(true)
+  const handleGameOver = () => {
+    setGameState("gameOver")
+    playSound("gameOver")
   }
 
-  const restart = () => {
-    setGameState("idle")
-    setDepth(0)
-    setGems(0)
-    setRiskPercent(0)
-    setLastItem("")
-    setDiscoveredItems([])
-    setShowModal(false)
+  const handleVictory = () => {
+    setGameState("victory")
+    playSound("victory")
+  }
+
+  const handleGemCollected = () => {
+    collectGem()
+    updateScore(100)
+    playSound("gemCollect")
+  }
+
+  const handleTrapTriggered = () => {
+    handleGameOver()
+    playSound("trap")
+  }
+
+  const restartGame = () => {
+    resetGame()
+    setGameState("start")
+  }
+
+  const showLeaderboard = () => {
+    setGameState("leaderboard")
   }
 
   return (
@@ -114,306 +126,350 @@ export default function MineEscapeGame() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg backdrop-blur-sm border border-slate-400/30"
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={showLeaderboard}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg backdrop-blur-sm border border-purple-400/30 hover:border-purple-400/60 transition-all"
             >
               <Trophy className="w-4 h-4 inline mr-2" />
               Leaderboard
             </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsWalletConnected(!isWalletConnected)}
-              className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all ${
-                isWalletConnected
-                  ? "bg-gradient-to-r from-green-600 to-emerald-600 border-green-400/30 hover:border-green-400/60"
-                  : "bg-gradient-to-r from-blue-600 to-cyan-600 border-cyan-400/30 hover:border-cyan-400/60"
-              }`}
-            >
-              <Wallet className="w-4 h-4 inline mr-2" />
-              {isWalletConnected ? "Connected" : "Connect Wallet"}
-            </motion.button>
+            <WalletConnect 
+              isConnected={isConnected}
+              onConnect={() => setIsWalletConnected(true)}
+              onDisconnect={() => setIsWalletConnected(false)}
+            />
           </div>
         </div>
       </motion.nav>
 
-      <div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-100px)]">
-        {/* Left Sidebar */}
-        <motion.div
-          initial={{ x: -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2 space-y-6"
-        >
-          {/* Depth Meter */}
-          <div className="backdrop-blur-md bg-white/5 rounded-xl border border-purple-500/20 p-4">
-            <h3 className="text-sm font-semibold text-cyan-400 mb-4">Depth Meter</h3>
-            <div className="relative h-48 w-8 mx-auto bg-slate-800 rounded-full overflow-hidden border border-cyan-500/30">
-              <motion.div
-                className="absolute bottom-0 w-full bg-gradient-to-t from-cyan-400 to-purple-400 rounded-full"
-                initial={{ height: 0 }}
-                animate={{ height: `${depth}%` }}
-                transition={{ duration: 0.5 }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-cyan-400/20 to-transparent animate-pulse" />
-            </div>
-            <p className="text-center mt-2 text-sm text-cyan-300">{depth.toFixed(1)}m</p>
-          </div>
-
-          {/* Discovered Items */}
-          <div className="backdrop-blur-md bg-white/5 rounded-xl border border-purple-500/20 p-4">
-            <h3 className="text-sm font-semibold text-cyan-400 mb-4">Discovered</h3>
-            <div className="space-y-3">
-              <AnimatePresence>
-                {discoveredItems.map((item, index) => (
-                  <motion.div
-                    key={item.type}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: -20, opacity: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center space-x-3 p-2 rounded-lg bg-white/5 border border-purple-400/20"
-                  >
-                    <item.icon className="w-5 h-5 text-yellow-400" />
-                    <span className="text-sm flex-1 capitalize">{item.type}</span>
-                    <span className="text-xs text-cyan-300">{item.count}</span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Main Game Area */}
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-8 flex flex-col items-center justify-center space-y-8"
-        >
-          {/* Three.js Placeholder */}
-          <div className="w-full max-w-2xl h-64 bg-gradient-to-br from-slate-800/50 to-purple-900/50 rounded-xl border border-cyan-500/30 flex items-center justify-center backdrop-blur-sm">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-cyan-400 to-purple-400 rounded-full flex items-center justify-center animate-pulse">
-                <Diamond className="w-8 h-8 text-white" />
-              </div>
-              <p className="text-cyan-300">3D Mine Visualization</p>
-              <p className="text-xs text-slate-400 mt-1">Three.js Canvas Placeholder</p>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full max-w-2xl">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-cyan-300">Depth Progress</span>
-              <span className="text-purple-300">{depth.toFixed(1)}% Complete</span>
-            </div>
-            <div className="h-3 bg-slate-800 rounded-full overflow-hidden border border-cyan-500/30">
-              <motion.div
-                className="h-full bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 rounded-full relative"
-                initial={{ width: 0 }}
-                animate={{ width: `${depth}%` }}
-                transition={{ duration: 0.5 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex space-x-6">
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(34, 211, 238, 0.5)" }}
-              whileTap={{ scale: 0.95 }}
-              onClick={dig}
-              disabled={gameState === "gameOver" || gameState === "escaped"}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-lg shadow-lg shadow-cyan-500/25 border border-cyan-400/30 hover:border-cyan-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Hammer className="w-6 h-6 inline mr-2" />
-              DIG
-            </motion.button>
-
-            <motion.button
-              whileHover={{
-                scale: depth >= 20 ? 1.05 : 1,
-                boxShadow: depth >= 20 ? "0 0 30px rgba(34, 197, 94, 0.5)" : "none",
-              }}
-              whileTap={{ scale: depth >= 20 ? 0.95 : 1 }}
-              onClick={cashOut}
-              disabled={depth < 20}
-              className={`px-8 py-4 rounded-xl font-bold text-lg shadow-lg border transition-all ${
-                depth >= 20
-                  ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-500/25 border-green-400/30 hover:border-green-400/60"
-                  : "bg-slate-700 shadow-slate-700/25 border-slate-600/30 opacity-50 cursor-not-allowed"
-              }`}
-            >
-              <TrendingUp className="w-6 h-6 inline mr-2" />
-              CASH OUT
-            </motion.button>
-          </div>
-
-          {/* Last Item Found */}
-          <AnimatePresence>
-            {lastItem && (
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                className="backdrop-blur-md bg-white/10 rounded-lg px-4 py-2 border border-yellow-400/30"
-              >
-                <p className="text-yellow-300 text-sm">Last found: {lastItem}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Right Sidebar */}
-        <motion.div
-          initial={{ x: 100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-2 space-y-6"
-        >
-          {/* Player Stats */}
-          <div className="backdrop-blur-md bg-white/5 rounded-xl border border-purple-500/20 p-4">
-            <h3 className="text-sm font-semibold text-cyan-400 mb-4">Player Stats</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-300">Gems</span>
-                <span className="text-yellow-400 font-bold">{gems}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-300">Risk %</span>
-                <span
-                  className={`font-bold ${riskPercent > 70 ? "text-red-400" : riskPercent > 40 ? "text-yellow-400" : "text-green-400"}`}
-                >
-                  {riskPercent.toFixed(1)}%
-                </span>
-              </div>
-              <div className="pt-2 border-t border-purple-500/20">
-                <p className="text-xs text-slate-400">Last Item</p>
-                <p className="text-sm text-cyan-300">{lastItem || "None"}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Mini Leaderboard */}
-          <div className="backdrop-blur-md bg-white/5 rounded-xl border border-purple-500/20 p-4">
-            <h3 className="text-sm font-semibold text-cyan-400 mb-4">Top Miners</h3>
-            <div className="space-y-2">
-              {[
-                { name: "CryptoMiner", score: 1250 },
-                { name: "DiamondHands", score: 980 },
-                { name: "DeepDigger", score: 750 },
-              ].map((player, index) => (
-                <div key={player.name} className="flex items-center space-x-2 text-xs">
-                  <span className="text-yellow-400">#{index + 1}</span>
-                  <span className="flex-1 text-slate-300">{player.name}</span>
-                  <span className="text-cyan-300">{player.score}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Bottom Drawer Toggle */}
-      <motion.button
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ delay: 0.5 }}
-        onClick={() => setShowBottomDrawer(!showBottomDrawer)}
-        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 backdrop-blur-md bg-white/10 rounded-full border border-purple-500/30 hover:border-purple-500/60 transition-all"
-      >
-        <Menu className="w-4 h-4" />
-      </motion.button>
-
-      {/* Bottom Drawer */}
-      <AnimatePresence>
-        {showBottomDrawer && (
+      <AnimatePresence mode="wait">
+        {/* Start Screen */}
+        {gameState === "start" && (
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 backdrop-blur-md bg-black/80 border-t border-purple-500/30 p-6 z-40"
+            key="start"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
           >
-            <div className="container mx-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-cyan-400">Game Info</h3>
-                <button
-                  onClick={() => setShowBottomDrawer(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            <div className="text-center space-y-8 max-w-2xl">
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="relative">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-cyan-400 via-purple-400 to-pink-400 rounded-full flex items-center justify-center"
+                  >
+                    <Diamond className="w-16 h-16 text-white" />
+                  </motion.div>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0 w-32 h-32 mx-auto bg-gradient-to-br from-cyan-400/20 via-purple-400/20 to-pink-400/20 rounded-full"
+                  />
+                </div>
+                
+                <motion.h1
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-6xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                 >
-                  <X className="w-4 h-4" />
-                </button>
+                  Mine & Escape
+                </motion.h1>
+                
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-xl text-slate-300 max-w-lg mx-auto"
+                >
+                  Enter the underground mine, collect treasures, avoid traps, and escape before time runs out!
+                </motion.p>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="space-y-4"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startGame}
+                  className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
+                >
+                  <Play className="w-6 h-6 inline mr-3" />
+                  Start Game
+                </motion.button>
+
+                <div className="flex justify-center space-x-8 text-sm text-slate-400">
+                  <div className="flex items-center space-x-2">
+                    <Diamond className="w-4 h-4 text-cyan-400" />
+                    <span>Collect Gems</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-red-400" />
+                    <span>Avoid Traps</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-yellow-400" />
+                    <span>Beat the Clock</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Game Playing Screen */}
+        {gameState === "playing" && (
+          <motion.div
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col h-[calc(100vh-100px)]"
+          >
+            {/* Game HUD */}
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="flex justify-between items-center p-4 bg-black/20 backdrop-blur-sm border-b border-purple-500/20"
+            >
+              <div className="flex space-x-6">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5 text-yellow-400" />
+                  <span className="text-xl font-bold text-yellow-400">{timeLeft}s</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Diamond className="w-5 h-5 text-cyan-400" />
+                  <span className="text-xl font-bold text-cyan-400">{gems}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Star className="w-5 h-5 text-purple-400" />
+                  <span className="text-xl font-bold text-purple-400">{score}</span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-white/5 rounded-lg border border-purple-500/20">
-                  <Info className="w-6 h-6 text-cyan-400 mb-2" />
-                  <h4 className="font-semibold mb-2">Game Rules</h4>
-                  <p className="text-sm text-slate-300">
-                    Dig deep to find treasures, but beware of bombs that increase your risk!
-                  </p>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={restartGame}
+                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 rounded-lg text-sm"
+              >
+                <RotateCcw className="w-4 h-4 inline mr-2" />
+                Restart
+              </motion.button>
+            </motion.div>
+
+            {/* 3D Game Canvas */}
+            <div className="flex-1">
+              <GameCanvas
+                onGemCollected={handleGemCollected}
+                onTrapTriggered={handleTrapTriggered}
+                onVictory={handleVictory}
+                playerPosition={playerPosition}
+              />
+            </div>
+
+            {/* Controls Info */}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="p-4 bg-black/20 backdrop-blur-sm border-t border-purple-500/20"
+            >
+              <div className="flex justify-center space-x-4 text-xs md:text-sm text-slate-400 flex-wrap">
+                <span>WASD/Arrow Keys</span>
+                <span>•</span>
+                <span>Click/Touch Adjacent Cells</span>
+                <span>•</span>
+                <span>Collect all gems!</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Game Over Screen */}
+        {gameState === "gameOver" && (
+          <motion.div
+            key="gameOver"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+          >
+            <div className="text-center space-y-8 max-w-md">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="w-24 h-24 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center"
+              >
+                <AlertTriangle className="w-12 h-12 text-white" />
+              </motion.div>
+
+              <div className="space-y-4">
+                <h2 className="text-4xl font-bold text-red-400">Game Over!</h2>
+                <p className="text-slate-300">You triggered a trap or ran out of time!</p>
+                
+                <div className="space-y-2 p-4 bg-white/5 rounded-lg border border-red-500/20">
+                  <div className="flex justify-between">
+                    <span>Final Score:</span>
+                    <span className="font-bold text-purple-400">{score}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Gems Collected:</span>
+                    <span className="font-bold text-cyan-400">{gems}</span>
+                  </div>
                 </div>
-                <div className="p-4 bg-white/5 rounded-lg border border-purple-500/20">
-                  <Users className="w-6 h-6 text-purple-400 mb-2" />
-                  <h4 className="font-semibold mb-2">About</h4>
-                  <p className="text-sm text-slate-300">A Web3 mining game where strategy meets luck in the depths.</p>
-                </div>
-                <div className="p-4 bg-white/5 rounded-lg border border-purple-500/20">
-                  <Gift className="w-6 h-6 text-yellow-400 mb-2" />
-                  <h4 className="font-semibold mb-2">Rewards</h4>
-                  <p className="text-sm text-slate-300">Earn NFT treasures and tokens based on your mining success!</p>
-                </div>
+              </div>
+
+              <div className="space-y-3">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startGame}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold"
+                >
+                  <Play className="w-5 h-5 inline mr-2" />
+                  Try Again
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={showLeaderboard}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold"
+                >
+                  <Trophy className="w-5 h-5 inline mr-2" />
+                  View Leaderboard
+                </motion.button>
               </div>
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
 
-      {/* Game Modal */}
-      <AnimatePresence>
-        {showModal && (
+        {/* Victory Screen */}
+        {gameState === "victory" && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            key="victory"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
           >
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.5, opacity: 0, y: 50 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="backdrop-blur-md bg-white/10 rounded-2xl border border-purple-500/30 p-8 max-w-md w-full text-center"
-            >
-              <div className="mb-6">
-                {gameState === "gameOver" ? (
-                  <>
-                    <Zap className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-red-400 mb-2">Game Over!</h2>
-                    <p className="text-slate-300">You hit a bomb and lost everything!</p>
-                  </>
-                ) : (
-                  <>
-                    <Crown className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-green-400 mb-2">Escape Successful!</h2>
-                    <p className="text-slate-300">You made it out with {gems} gems!</p>
-                  </>
-                )}
+            <div className="text-center space-y-8 max-w-md">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="relative"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center"
+                >
+                  <Crown className="w-12 h-12 text-white" />
+                </motion.div>
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 rounded-full"
+                />
+              </motion.div>
+
+              <div className="space-y-4">
+                <h2 className="text-4xl font-bold text-yellow-400">Victory!</h2>
+                <p className="text-slate-300">You successfully escaped the mine!</p>
+                
+                <div className="space-y-2 p-4 bg-white/5 rounded-lg border border-yellow-500/20">
+                  <div className="flex justify-between">
+                    <span>Final Score:</span>
+                    <span className="font-bold text-purple-400">{score}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Gems Collected:</span>
+                    <span className="font-bold text-cyan-400">{gems}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Time Bonus:</span>
+                    <span className="font-bold text-yellow-400">{timeLeft * 10}</span>
+                  </div>
+                </div>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={restart}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg font-bold shadow-lg shadow-cyan-500/25 border border-cyan-400/30 hover:border-cyan-400/60 transition-all"
-              >
-                <RotateCcw className="w-4 h-4 inline mr-2" />
-                Play Again
-              </motion.button>
-            </motion.div>
+              <div className="space-y-3">
+                {isConnected && address && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={async () => {
+                      try {
+                        await submitScore(score + (timeLeft * 10), gems)
+                      } catch (error) {
+                        console.error('Failed to submit score:', error)
+                        alert('Failed to submit score. Make sure the contract is deployed on this network.')
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="w-full px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-bold disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-5 h-5 inline mr-2" />
+                    {isSubmitting ? 'Submitting...' : isConfirmed ? 'Score Submitted!' : 'Submit to Leaderboard'}
+                  </motion.button>
+                )}
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startGame}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold"
+                >
+                  <Play className="w-5 h-5 inline mr-2" />
+                  Play Again
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={showLeaderboard}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold"
+                >
+                  <Trophy className="w-5 h-5 inline mr-2" />
+                  View Leaderboard
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Leaderboard Screen */}
+        {gameState === "leaderboard" && (
+          <motion.div
+            key="leaderboard"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            className="min-h-[calc(100vh-100px)] p-4"
+          >
+            <Leaderboard onBack={() => setGameState("start")} />
           </motion.div>
         )}
       </AnimatePresence>
