@@ -23,7 +23,7 @@ const somnia = defineChain({
 
 // Define Somnia Testnet
 const somniaTestnet = defineChain({
-  id: 50311,
+  id: 50312,
   name: 'Somnia Testnet',
   nativeCurrency: {
     decimals: 18,
@@ -36,7 +36,7 @@ const somniaTestnet = defineChain({
     },
   },
   blockExplorers: {
-    default: { name: 'Somnia Testnet Explorer', url: 'https://somnia-testnet.calderaexplorer.xyz' },
+    default: { name: 'Somnia Testnet Explorer', url: 'https://shannon-explorer.somnia.network/' },
   },
   testnet: true,
 })

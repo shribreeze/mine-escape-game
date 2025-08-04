@@ -48,6 +48,27 @@ export default function MineEscapeGame() {
 
   const { playSound } = useSound(soundEnabled)
 
+  // Global keyboard navigation
+  useEffect(() => {
+    const handleGlobalKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (gameState === 'playing') {
+          restartGame()
+        } else if (gameState === 'leaderboard') {
+          setGameState('start')
+        }
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        if (gameState === 'start') {
+          startGame()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyPress)
+    return () => window.removeEventListener('keydown', handleGlobalKeyPress)
+  }, [gameState])
+
   // Game timer
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -123,24 +144,20 @@ export default function MineEscapeGame() {
           </motion.div>
 
           <div className="flex items-center space-x-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-2 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg backdrop-blur-sm border border-slate-400/30"
+              className="p-2 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg backdrop-blur-sm border border-slate-400/30 cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </motion.button>
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={showLeaderboard}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg backdrop-blur-sm border border-purple-400/30 hover:border-purple-400/60 transition-all"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg backdrop-blur-sm border border-purple-400/30 hover:border-purple-400/60 hover:scale-105 active:scale-95 transition-all cursor-pointer touch-manipulation"
             >
               <Trophy className="w-4 h-4 inline mr-2" />
               Leaderboard
-            </motion.button>
+            </button>
 
             <WalletConnect 
               isConnected={isConnected}
@@ -208,15 +225,15 @@ export default function MineEscapeGame() {
                 transition={{ delay: 0.8 }}
                 className="space-y-4"
               >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={startGame}
-                  className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
+                  className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/25 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer touch-manipulation"
                 >
                   <Play className="w-6 h-6 inline mr-3" />
                   Start Game
-                </motion.button>
+                </button>
+                
+                <p className="text-xs text-slate-500 mt-2">Press Enter or Space to start</p>
 
                 <div className="flex justify-center space-x-8 text-sm text-slate-400">
                   <div className="flex items-center space-x-2">
@@ -267,15 +284,13 @@ export default function MineEscapeGame() {
                 </div>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={restartGame}
-                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 rounded-lg text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 rounded-lg text-sm cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
               >
                 <RotateCcw className="w-4 h-4 inline mr-2" />
                 Restart
-              </motion.button>
+              </button>
             </motion.div>
 
             {/* 3D Game Canvas */}
@@ -299,7 +314,7 @@ export default function MineEscapeGame() {
                 <span>•</span>
                 <span>Click/Touch Adjacent Cells</span>
                 <span>•</span>
-                <span>Collect all gems!</span>
+                <span>ESC to Restart</span>
               </div>
             </motion.div>
           </motion.div>
@@ -313,6 +328,7 @@ export default function MineEscapeGame() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.1 }}
             className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+            style={{ pointerEvents: 'auto' }}
           >
             <div className="text-center space-y-8 max-w-md">
               <motion.div
@@ -341,21 +357,19 @@ export default function MineEscapeGame() {
               </div>
 
               <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={startGame}
-                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold"
+                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
                 >
                   <Play className="w-5 h-5 inline mr-2" />
                   Try Again
-                </motion.button>
+                </button>
                 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={showLeaderboard}
-                  className="w-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold"
+                  className="w-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold cursor-pointer touch-manipulation"
                 >
                   <Trophy className="w-5 h-5 inline mr-2" />
                   View Leaderboard
@@ -373,6 +387,7 @@ export default function MineEscapeGame() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.1 }}
             className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+            style={{ pointerEvents: 'auto' }}
           >
             <div className="text-center space-y-8 max-w-md">
               <motion.div
@@ -429,7 +444,7 @@ export default function MineEscapeGame() {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="w-full px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-bold disabled:opacity-50"
+                    className="w-full px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-bold disabled:opacity-50 cursor-pointer touch-manipulation"
                   >
                     <CheckCircle className="w-5 h-5 inline mr-2" />
                     {isSubmitting ? 'Submitting...' : isConfirmed ? 'Score Submitted!' : 'Submit to Leaderboard'}
@@ -440,7 +455,7 @@ export default function MineEscapeGame() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={startGame}
-                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold"
+                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold cursor-pointer touch-manipulation"
                 >
                   <Play className="w-5 h-5 inline mr-2" />
                   Play Again

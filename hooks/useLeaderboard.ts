@@ -1,10 +1,11 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi'
 import { LEADERBOARD_ABI, CONTRACT_ADDRESSES } from '@/lib/contract'
 import { useChainId } from 'wagmi'
 
 export function useLeaderboard() {
   const chainId = useChainId()
-  const contractAddress = CONTRACT_ADDRESSES[chainId]
+  const { switchChain } = useSwitchChain()
+  const contractAddress = CONTRACT_ADDRESSES[chainId || 50312]
 
   // Read top scores
   const { data: topScores, isLoading: isLoadingScores, refetch: refetchScores } = useReadContract({
@@ -23,12 +24,24 @@ export function useLeaderboard() {
   })
 
   const submitScore = async (score: number, gems: number) => {
-    if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
-      throw new Error('Contract not deployed on this network. Please deploy the MineEscapeLeaderboard contract first.')
+    // Check if we're on the wrong network
+    if (chainId !== 50312) {
+      try {
+        await switchChain({ chainId: 50312 })
+        // Wait a moment for the switch to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (error) {
+        throw new Error('Please switch to Somnia Testnet to submit your score')
+      }
+    }
+    
+    const currentContractAddress = CONTRACT_ADDRESSES[50312]
+    if (!currentContractAddress || currentContractAddress === '0x0000000000000000000000000000000000000000') {
+      throw new Error('Contract not deployed on Somnia Testnet')
     }
 
     writeContract({
-      address: contractAddress,
+      address: currentContractAddress,
       abi: LEADERBOARD_ABI,
       functionName: 'submitScore',
       args: [BigInt(score), BigInt(gems)],

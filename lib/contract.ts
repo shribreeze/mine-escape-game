@@ -110,7 +110,7 @@ export const LEADERBOARD_ABI = [
 // Contract addresses for different networks
 export const CONTRACT_ADDRESSES: Record<number, Address> = {
   2019: '0x0000000000000000000000000000000000000000', // Somnia Mainnet (replace with actual)
-  50311: '0x0000000000000000000000000000000000000000', // Somnia Testnet (replace with actual)
+  50312: '0xED4e24F3F5EB9ca614a5b76BD3d6C6F4C1eE00bA', // Somnia Testnet
   1: '0x0000000000000000000000000000000000000000', // Mainnet (replace with actual)
   11155111: '0x0000000000000000000000000000000000000000', // Sepolia (replace with actual)
   137: '0x0000000000000000000000000000000000000000', // Polygon (replace with actual)
