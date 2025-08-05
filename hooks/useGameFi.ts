@@ -92,13 +92,14 @@ export function useGameFi() {
     })
   }
 
-  const exitGame = async () => {
+  const exitGame = async (gems: number) => {
     await ensureCorrectNetwork()
     
     writeContract({
       address: GAMEFI_CONTRACT_ADDRESS,
       abi: GAMEFI_ABI,
       functionName: 'exitGame',
+      args: [BigInt(gems)],
     })
   }
 

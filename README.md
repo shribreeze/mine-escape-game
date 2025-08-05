@@ -1,172 +1,254 @@
-# Mine & Escape - Web3 Gaming Experience
+# Mine & Escape - GameFi Web3 Mining Game
 
-A fully responsive, modern, and animated Web3 mini-game built with Next.js, Tailwind CSS, Framer Motion, and integrated with Wagmi + RainbowKit for wallet connection.
+A fully decentralized Web3 mining game built with Next.js, deployed on Somnia Testnet. Players dig for gems, avoid bombs, and earn STT tokens through strategic gameplay.
 
 ## 🎮 Game Overview
 
-Mine & Escape is a solo Web3 mini-game where players enter a 3D underground mine to collect treasures and escape before time runs out or traps get triggered.
+Mine & Escape is a multi-level survival GameFi experience where players pay STT tokens to enter levels, collect gems by digging, and earn rewards. Hit a bomb and lose everything - no checkpoints, pure risk/reward gameplay.
 
-### Game Flow
-1. Connect your wallet via RainbowKit/Wagmi
-2. Start the game with animated background transitions
-3. Navigate through the mine using WASD or arrow keys
-4. Collect glowing gems while avoiding traps
-5. Escape before time runs out to win
-6. Submit your score to the on-chain leaderboard
+## 🚀 Live Game
+
+**Contract Addresses (Somnia Testnet):**
+- **STT Token**: `0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8`
+- **GameFi Contract**: `0x3799325E764463655A27C4880E7A9Ee2bC7c5Fa9`
+- **Network**: Somnia Testnet (Chain ID: 50312)
+
+## 💰 GameFi Tokenomics
+
+### Entry Fees
+- **Level 1**: 0.1 STT
+- **Level 2**: 0.2 STT  
+- **Level 3**: 0.3 STT
+- **Level 4**: 0.4 STT
+- **Level 5**: 0.5 STT
+
+### Rewards
+- **Gem Conversion**: 10 gems = 1 STT
+- **NFT Badge**: Complete all 5 levels to earn soulbound NFT
+- **On-Chain Leaderboard**: Permanent ranking system
+
+### Risk Mechanics
+- **Hit Bomb**: Lose all entry tokens and collected gems
+- **Time Out**: Lose everything if timer reaches zero
+- **No Checkpoints**: Fail = restart from Level 1
+
+## 🎯 Game Mechanics
+
+### Level Progression
+Each level increases difficulty:
+- **Level 1**: 8 gems, 2 bombs, 120 seconds
+- **Level 2**: 7 gems, 3 bombs, 100 seconds
+- **Level 3**: 6 gems, 4 bombs, 80 seconds
+- **Level 4**: 5 gems, 5 bombs, 60 seconds
+- **Level 5**: 4 gems, 6 bombs, 45 seconds
+
+### Gameplay
+1. **Connect Wallet** - MetaMask or WalletConnect
+2. **Get STT Tokens** - Use faucet for testing
+3. **Select Level** - Pay entry fee
+4. **Dig Mine** - Click cells to reveal gems/bombs
+5. **Collect Gems** - Find all gems to complete level
+6. **Cash Out** - Exit anytime to convert gems to STT
 
 ## 🛠 Tech Stack
 
-- **Frontend**: Next.js 15 + TypeScript
-- **Styling**: Tailwind CSS + Tailwind Animate
-- **Animations**: Framer Motion
-- **3D Graphics**: Three.js (via @react-three/fiber and drei)
-- **Web3**: Wagmi v2 + RainbowKit + Viem
-- **State Management**: Zustand
-- **Smart Contract**: Solidity (Leaderboard contract)
-
-## 🚀 Features
-
-### UI Components
-- ✅ Animated start screen with logo and start button
-- ✅ Game HUD showing timer, score, and gems collected
-- ✅ 3D mine environment (currently 2D grid placeholder)
-- ✅ Game over and victory screens with transitions
-- ✅ On-chain leaderboard with wallet addresses and scores
-- ✅ Real wallet connection using RainbowKit
-- ✅ Responsive design with motion effects
-
-### Game Mechanics
-- ✅ Player movement with WASD/Arrow keys
-- ✅ Gem collection system
-- ✅ Trap detection and game over
-- ✅ Timer countdown
-- ✅ Score calculation with time bonus
-- ✅ Victory condition (collect all gems)
+### Frontend
+- **Next.js 15** + TypeScript
+- **Tailwind CSS** for styling
+- **Lucide React** for icons
+- **Zustand** for state management
 
 ### Web3 Integration
-- ✅ Real wallet connection (MetaMask, WalletConnect, etc.)
-- ✅ Smart contract for leaderboard
-- ✅ On-chain score submission
-- ✅ Multi-chain support (Mainnet, Polygon, Sepolia)
+- **Wagmi v2** + **RainbowKit** for wallet connection
+- **Viem** for blockchain interactions
+- **Smart Contracts** in Solidity
 
-### Sound System
-- ✅ Web Audio API implementation
-- ✅ Sound effects for: gem collection, traps, game over, victory
-- ✅ Sound toggle functionality
+### Blockchain
+- **Somnia Testnet** (50312)
+- **ERC20 Token** (STT)
+- **ERC721 NFT** (Completion Badge)
+- **On-Chain Leaderboard**
 
-## 📦 Installation
+## 📦 Installation & Setup
 
-1. **Clone the repository**
+### 1. Clone Repository
 ```bash
 git clone <repository-url>
 cd mine-escape-game
 ```
 
-2. **Install dependencies**
+### 2. Install Dependencies
 ```bash
 pnpm install
 ```
 
-3. **Set up environment variables**
-Create a `.env.local` file:
+### 3. Environment Setup
+Create `.env.local`:
 ```env
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+PRIVATE_KEY=your_private_key_for_deployment
 ```
 
-4. **Deploy the smart contract** (Optional)
-- Deploy `contracts/MineEscapeLeaderboard.sol` to your preferred network
-- Update contract addresses in `lib/contract.ts`
-
-5. **Run the development server**
+### 4. Run Development Server
 ```bash
 pnpm dev
 ```
 
-## 🎯 Game Controls
+## 🔧 Smart Contract Deployment
 
-- **WASD** or **Arrow Keys**: Move player
-- **Mouse**: Click to interact with UI elements
-- **Space**: (Future: Jump/Special action)
+### Deploy to Somnia Testnet
+```bash
+# Deploy contracts
+npx hardhat run scripts/deploy-gamefi.js --network somniaTestnet
 
-## 🏆 Scoring System
+# Fund contract with STT tokens
+npx hardhat run scripts/fund-contract.js --network somniaTestnet
 
-- **Gem Collection**: 100 points per gem
-- **Time Bonus**: 10 points per second remaining
-- **Victory Bonus**: Additional points for completing the level
+# Get test STT tokens
+npx hardhat run scripts/test-faucet.js --network somniaTestnet
+```
 
-## 🔧 Configuration
+### Contract Functions
+- `startLevel(uint256 level)` - Pay entry fee and start level
+- `completeLevel(uint256 gems)` - Complete level with gems collected
+- `exitGame(uint256 gems)` - Cash out current gems
+- `failGame()` - Called when player hits bomb/times out
+- `getGameSession(address)` - Get player's current session
+- `getLeaderboard()` - Get top 100 players
 
-### Wallet Setup
-The game uses RainbowKit for wallet connections. Supported wallets include:
-- MetaMask
-- WalletConnect
-- Coinbase Wallet
-- Rainbow Wallet
-- And many more...
+## 🎮 How to Play
 
-### Smart Contract
-The leaderboard smart contract is located in `contracts/MineEscapeLeaderboard.sol`. Key features:
-- Stores player scores on-chain
-- Maintains top 100 scores
-- Prevents score manipulation
-- Emits events for score submissions
+### Getting Started
+1. **Add Somnia Testnet** to MetaMask:
+   - Network: Somnia Testnet
+   - RPC: `https://dream-rpc.somnia.network`
+   - Chain ID: 50312
+   - Symbol: STT
 
-### Supported Networks
-- Ethereum Mainnet
-- Polygon
-- Optimism
-- Arbitrum
-- Base
-- Sepolia (Testnet)
+2. **Add STT Token** to wallet:
+   - Address: `0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8`
+   - Symbol: STT
+   - Decimals: 18
 
-## 🎨 Customization
+3. **Get Test Tokens**:
+   - Click "Get Free STT" in game
+   - Or call faucet function directly
 
-### Adding New Sound Effects
-Edit `hooks/useSound.ts` to add new sound types and frequencies.
+### Game Strategy
+- **Start with Level 1** - Lowest risk, learn mechanics
+- **Collect gems carefully** - Each click could be a bomb
+- **Watch the timer** - Don't run out of time
+- **Cash out strategically** - Exit with gems or risk it all
+- **Complete all 5 levels** - Earn exclusive NFT badge
 
-### Modifying Game Mechanics
-Update `store/gameStore.ts` for game state management and `components/GameCanvas.tsx` for game logic.
+## 🏆 Features
 
-### Styling Changes
-All styles use Tailwind CSS. Modify classes directly in components or extend the theme in `tailwind.config.ts`.
+### ✅ Implemented
+- **Multi-level progression** (1-5)
+- **Token-based entry fees** (0.1-0.5 STT)
+- **Grid-based mine digging** with mouse/touch controls
+- **Real-time gem collection** and bomb detection
+- **Timer countdown** per level
+- **Smart contract integration** for all game logic
+- **On-chain leaderboard** with permanent rankings
+- **NFT badge rewards** for completion
+- **Wallet connection** via RainbowKit
+- **Sound effects** with toggle
+- **Responsive design** for all devices
+- **No Framer Motion** - Pure CSS animations for better performance
 
-## 🚧 Future Enhancements
+### 🎯 Game States
+- **Menu** - Connect wallet and view game info
+- **Level Select** - Choose level and pay entry fee
+- **Playing** - Active mine digging gameplay
+- **Level Complete** - Option to continue or cash out
+- **Game Over** - Bomb hit or timeout, lose everything
+- **All Complete** - Completed all 5 levels, NFT earned
+- **Leaderboard** - View on-chain rankings
 
-- [ ] Full 3D mine environment with Three.js
-- [ ] Multiple levels with increasing difficulty
-- [ ] NFT rewards for high scores
-- [ ] Multiplayer mode
-- [ ] Mobile touch controls
-- [ ] Background music integration
-- [ ] Power-ups and special items
-- [ ] Achievement system
+## 📊 Smart Contract Architecture
 
-## 📝 Smart Contract Deployment
+### MineEscapeGameFi.sol
+```solidity
+struct GameSession {
+    uint256 currentLevel;
+    uint256 gemsCollected;
+    bool isActive;
+    uint256 totalTokensSpent;
+}
 
-To deploy the leaderboard contract:
+struct LeaderboardEntry {
+    address player;
+    uint256 maxLevel;
+    uint256 totalGems;
+    uint256 timestamp;
+}
+```
 
-1. Install Hardhat or Foundry
-2. Configure your network settings
-3. Deploy `MineEscapeLeaderboard.sol`
-4. Update contract addresses in `lib/contract.ts`
-5. Verify the contract on Etherscan
+### Key Features
+- **Sequential Level Progression** - Must complete levels in order
+- **Token Balance Verification** - Checks STT balance before entry
+- **Automatic Gem Conversion** - 10 gems = 1 STT payout
+- **Leaderboard Tracking** - Permanent on-chain records
+- **NFT Badge Minting** - Soulbound completion certificate
+
+## 🔐 Security Features
+
+- **No Off-Chain Data** - All game state on blockchain
+- **Tamper-Proof Scoring** - Smart contract validation
+- **Wallet-Based Authentication** - No traditional login
+- **Transparent Transactions** - All actions verifiable
+- **Decentralized Leaderboard** - Cannot be manipulated
+
+## 🌐 Network Configuration
+
+### Somnia Testnet
+- **Chain ID**: 50312
+- **RPC URL**: `https://dream-rpc.somnia.network`
+- **Explorer**: `https://shannon-explorer.somnia.network`
+- **Native Token**: STT
+- **Gas Price**: 20 gwei
+
+## 📱 Responsive Design
+
+- **Desktop**: Full grid layout with hover effects
+- **Tablet**: Optimized touch controls
+- **Mobile**: Touch-friendly mine digging
+- **All Devices**: Wallet connection support
+
+## 🎵 Audio System
+
+- **Web Audio API** implementation
+- **Sound Effects**: Gem collection, bomb explosion, victory, game over
+- **Toggle Control**: Enable/disable sounds
+- **No Background Music** - Focus on gameplay sounds
+
+## 🚀 Performance Optimizations
+
+- **No Framer Motion** - Removed for better click responsiveness
+- **CSS Transitions** - Smooth hover/active states
+- **Optimized Rendering** - Minimal re-renders
+- **Efficient State Management** - Zustand for game state
+- **Smart Contract Caching** - Wagmi query optimization
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🎮 Play Now
 
-Visit the deployed game at: [Your deployment URL]
+Connect your wallet, get some STT tokens, and start mining! 
+
+**Remember**: This is a high-risk, high-reward game. One wrong click and you lose everything. Are you brave enough to dig deep? ⛏️💎
 
 ---
 
-Built with ❤️ for the Web3 gaming community
+Built with ❤️ for the Web3 gaming community on Somnia Testnet

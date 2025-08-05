@@ -95,9 +95,12 @@ contract MineEscapeGameFi is ERC721, Ownable {
         delete gameSessions[msg.sender];
     }
     
-    function exitGame() external {
+    function exitGame(uint256 gems) external {
         GameSession storage session = gameSessions[msg.sender];
         require(session.isActive, "No active game session");
+        
+        // Add current level gems to total
+        session.gemsCollected += gems;
         
         // Convert gems to tokens
         uint256 tokenReward = session.gemsCollected / GEMS_TO_TOKEN_RATE * 1e18;

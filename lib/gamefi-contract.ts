@@ -23,7 +23,7 @@ export const GAMEFI_ABI = [
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [{"internalType": "uint256", "name": "gems", "type": "uint256"}],
     "name": "exitGame",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -76,8 +76,8 @@ export const GAMEFI_ABI = [
   }
 ] as const
 
-export const GAMEFI_CONTRACT_ADDRESS: Address = '0xa29f36B65b787e99999C567731F1085008d0bdC9'
-export const STT_TOKEN_ADDRESS: Address = '0x7089349Ff87fe87f7F6a61df9c8dF44bC3CBAA36'
+export const GAMEFI_CONTRACT_ADDRESS: Address = '0x3799325E764463655A27C4880E7A9Ee2bC7c5Fa9'
+export const STT_TOKEN_ADDRESS: Address = '0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8'
 
 // STT Token ABI for approvals and balance checks
 export const STT_ABI = [

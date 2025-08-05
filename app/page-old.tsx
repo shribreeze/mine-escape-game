@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Hammer,
   Diamond,
@@ -33,6 +33,7 @@ export default function MineEscapeGame() {
   const { address, isConnected } = useAccount()
   const { gameSession, startLevel, completeLevel, failGame, exitGame, isPending, isConfirmed } = useGameFi()
   
+  // Show transaction status
   useEffect(() => {
     if (isConfirmed) {
       console.log('Transaction confirmed!')
@@ -53,14 +54,16 @@ export default function MineEscapeGame() {
 
   const { playSound } = useSound(soundEnabled)
 
+  // Handle bomb trigger
   useEffect(() => {
     if (hasActiveBomb && gameState === 'playing') {
       setGameState('gameOver')
       playSound('trap')
-      failGame()
+      failGame() // Call contract
     }
   }, [hasActiveBomb, gameState, playSound, failGame])
 
+  // Game timer
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (gameState === "playing" && timeLeft > 0) {
@@ -69,7 +72,7 @@ export default function MineEscapeGame() {
         if (timeLeft <= 1) {
           setGameState("gameOver")
           playSound("gameOver")
-          failGame()
+          failGame() // Call contract
         }
       }, 1000)
     }
@@ -108,7 +111,8 @@ export default function MineEscapeGame() {
       console.log('Exiting game with gems:', gems)
       await exitGame(gems)
       
-      const sttEarned = Math.floor(gems / 10 * 10) / 10
+      // Show success message
+      const sttEarned = Math.floor(gems / 10 * 10) / 10 // Round to 1 decimal
       if (sttEarned > 0) {
         alert(`Success! You earned ${sttEarned} STT from ${gems} gems!`)
       }
@@ -128,12 +132,14 @@ export default function MineEscapeGame() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
-      <div className="fixed inset-0 opacity-20 pointer-events-none">
+      {/* Animated Background */}
+      <div className="fixed inset-0 opacity-20">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.3),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(120,119,198,0.2),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.2),transparent_50%)]" />
       </div>
 
+      {/* Top Navbar */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/20 border-b border-purple-500/20">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -150,6 +156,8 @@ export default function MineEscapeGame() {
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
+
+
 
             <button
               onClick={() => setGameState("leaderboard")}
@@ -169,30 +177,68 @@ export default function MineEscapeGame() {
       </nav>
 
       <div>
+        {/* Leaderboard Screen */}
         {gameState === "leaderboard" && (
           <OnChainLeaderboard onBack={() => setGameState("menu")} />
         )}
 
+
+        {/* Menu Screen */}
         {gameState === "menu" && (
-          <div className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4">
+          <motion.div
+            key="menu"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+          >
             <div className="text-center space-y-8 max-w-2xl">
-              <div className="space-y-4">
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4"
+              >
                 <div className="relative">
-                  <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-cyan-400 via-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-cyan-400 via-purple-400 to-pink-400 rounded-full flex items-center justify-center"
+                  >
                     <Diamond className="w-16 h-16 text-white" />
-                  </div>
+                  </motion.div>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0 w-32 h-32 mx-auto bg-gradient-to-br from-cyan-400/20 via-purple-400/20 to-pink-400/20 rounded-full"
+                  />
                 </div>
                 
-                <h1 className="text-6xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <motion.h1
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-6xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+                >
                   Mine & Escape
-                </h1>
+                </motion.h1>
                 
-                <p className="text-xl text-slate-300 max-w-lg mx-auto">
-                  Dig deep, collect gems, avoid bombs. Pay STT to play, earn rewards!
-                </p>
-              </div>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-xl text-slate-300 max-w-lg mx-auto"
+                >
+                  Enter the underground mine, collect treasures, avoid traps, and escape before time runs out!
+                </motion.p>
+              </motion.div>
 
-              <div className="space-y-6">
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="space-y-4"
+              >
                 {!isConnected ? (
                   <div className="p-6 bg-red-500/10 border border-red-400/30 rounded-xl">
                     <p className="text-red-400 font-medium mb-4">Connect your wallet to start playing</p>
@@ -212,6 +258,8 @@ export default function MineEscapeGame() {
                   </button>
                 )}
                 
+                <p className="text-xs text-slate-500 mt-2">Press Enter or Space to start</p>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="p-4 bg-white/5 rounded-lg">
                     <Coins className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
@@ -229,11 +277,12 @@ export default function MineEscapeGame() {
                     <p className="text-slate-400">Hit bomb = lose everything</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         )}
 
+        {/* Level Selection */}
         {gameState === "levelSelect" && (
           <LevelSelector 
             onStartLevel={handleStartLevel}
@@ -241,9 +290,21 @@ export default function MineEscapeGame() {
           />
         )}
 
+        {/* Game Playing Screen */}
         {gameState === "playing" && (
-          <div className="flex flex-col h-[calc(100vh-100px)]">
-            <div className="flex justify-between items-center p-4 bg-black/20 backdrop-blur-sm border-b border-purple-500/20">
+          <motion.div
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col h-[calc(100vh-100px)]"
+          >
+            {/* Game HUD */}
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="flex justify-between items-center p-4 bg-black/20 backdrop-blur-sm border-b border-purple-500/20"
+            >
               <div className="flex space-x-6">
                 <div className="flex items-center space-x-2">
                   <span className="text-lg font-bold text-white">Level {currentLevel}</span>
@@ -264,8 +325,9 @@ export default function MineEscapeGame() {
               >
                 Exit & Cash Out
               </button>
-            </div>
+            </motion.div>
 
+            {/* Mine Digging Game */}
             <div className="flex-1">
               <MineDigger
                 level={currentLevel}
@@ -275,20 +337,38 @@ export default function MineEscapeGame() {
               />
             </div>
 
-            <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-purple-500/20">
+            {/* Controls Info */}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="p-4 bg-black/20 backdrop-blur-sm border-t border-purple-500/20"
+            >
               <div className="text-sm text-slate-400 text-center">
                 Click to dig • Find gems • Avoid bombs
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
+        {/* Game Over Screen */}
         {gameState === "gameOver" && (
-          <div className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4">
+          <motion.div
+            key="gameOver"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+            style={{ pointerEvents: 'auto' }}
+          >
             <div className="text-center space-y-8 max-w-md">
-              <div className="w-24 h-24 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="w-24 h-24 mx-auto bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center"
+              >
                 <AlertTriangle className="w-12 h-12 text-white" />
-              </div>
+              </motion.div>
 
               <div className="space-y-4">
                 <h2 className="text-4xl font-bold text-red-400">Game Over!</h2>
@@ -332,15 +412,27 @@ export default function MineEscapeGame() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
+        {/* Level Complete Screen */}
         {gameState === "levelComplete" && (
-          <div className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4">
+          <motion.div
+            key="levelComplete"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+            style={{ pointerEvents: 'auto' }}
+          >
             <div className="text-center space-y-8 max-w-md">
-              <div className="w-24 h-24 mx-auto bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-24 h-24 mx-auto bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center"
+              >
                 <CheckCircle className="w-12 h-12 text-white" />
-              </div>
+              </motion.div>
 
               <div className="space-y-4">
                 <h2 className="text-4xl font-bold text-green-400">Level {currentLevel} Complete!</h2>
@@ -374,17 +466,39 @@ export default function MineEscapeGame() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
+        {/* All Levels Complete */}
         {gameState === "allComplete" && (
-          <div className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4">
+          <motion.div
+            key="victory"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+            style={{ pointerEvents: 'auto' }}
+          >
             <div className="text-center space-y-8 max-w-md">
-              <div className="relative">
-                <div className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="relative"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center"
+                >
                   <Crown className="w-12 h-12 text-white" />
-                </div>
-              </div>
+                </motion.div>
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 rounded-full"
+                />
+              </motion.div>
 
               <div className="space-y-4">
                 <h2 className="text-4xl font-bold text-yellow-400">Master Miner!</h2>
@@ -436,8 +550,10 @@ export default function MineEscapeGame() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+
+
       </div>
     </div>
   )
