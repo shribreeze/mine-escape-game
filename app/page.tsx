@@ -8,116 +8,110 @@ import {
   Zap,
   Crown,
   Trophy,
-  Wallet,
   Play,
-  RotateCcw,
   Clock,
-  Star,
+  Coins,
   AlertTriangle,
   CheckCircle,
   Volume2,
-  VolumeX
+  VolumeX,
+  ArrowLeft
 } from "lucide-react"
-import { GameCanvas } from "@/components/GameCanvas"
+import { MineDigger } from "@/components/MineDigger"
 import { WalletConnect } from "@/components/WalletConnect"
-import { Leaderboard } from "@/components/Leaderboard"
+import { LevelSelector } from "@/components/LevelSelector"
 import { useGameStore } from "@/store/gameStore"
 import { useSound } from "@/hooks/useSound"
 import { useAccount } from 'wagmi'
-import { useLeaderboard } from '@/hooks/useLeaderboard'
+import { useGameFi } from '@/hooks/useGameFi'
 
-type GameState = "start" | "playing" | "gameOver" | "victory" | "leaderboard"
+type GameState = "menu" | "levelSelect" | "playing" | "levelComplete" | "gameOver" | "allComplete"
 
 export default function MineEscapeGame() {
-  const [gameState, setGameState] = useState<GameState>("start")
-  const [isWalletConnected, setIsWalletConnected] = useState(false)
-  const { address, isConnected } = useAccount()
-  const { submitScore, isSubmitting, isConfirmed } = useLeaderboard()
+  const [gameState, setGameState] = useState<GameState>("menu")
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const { address, isConnected } = useAccount()
+  const { gameSession, startLevel, completeLevel, failGame, exitGame, isPending } = useGameFi()
   
   const {
-    score,
+    currentLevel,
     gems,
     timeLeft,
-    playerPosition,
+    totalGemsCollected,
+    hasActiveBomb,
     resetGame,
-    updateScore,
-    collectGem,
-    decrementTime
+    startLevel: startGameLevel,
+    triggerBomb,
+    completeLevel: completeGameLevel
   } = useGameStore()
 
   const { playSound } = useSound(soundEnabled)
 
-  // Global keyboard navigation
+  // Handle bomb trigger
   useEffect(() => {
-    const handleGlobalKeyPress = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (gameState === 'playing') {
-          restartGame()
-        } else if (gameState === 'leaderboard') {
-          setGameState('start')
-        }
-      }
-      if (event.key === 'Enter' || event.key === ' ') {
-        if (gameState === 'start') {
-          startGame()
-        }
-      }
+    if (hasActiveBomb && gameState === 'playing') {
+      setGameState('gameOver')
+      playSound('trap')
+      failGame() // Call contract
     }
-
-    window.addEventListener('keydown', handleGlobalKeyPress)
-    return () => window.removeEventListener('keydown', handleGlobalKeyPress)
-  }, [gameState])
+  }, [hasActiveBomb, gameState, playSound, failGame])
 
   // Game timer
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (gameState === "playing" && timeLeft > 0) {
       interval = setInterval(() => {
-        decrementTime()
+        useGameStore.getState().decrementTime()
         if (timeLeft <= 1) {
           setGameState("gameOver")
           playSound("gameOver")
+          failGame() // Call contract
         }
       }, 1000)
     }
     return () => clearInterval(interval)
-  }, [gameState, timeLeft, decrementTime, playSound])
+  }, [gameState, timeLeft, playSound, failGame])
 
-  const startGame = () => {
-    resetGame()
-    setGameState("playing")
-    playSound("start")
+  const handleStartLevel = async (level: number) => {
+    try {
+      await startLevel(level)
+      startGameLevel(level)
+      setGameState("playing")
+      playSound("start")
+    } catch (error) {
+      alert('Failed to start level. Check your STT balance.')
+    }
   }
 
-  const handleGameOver = () => {
-    setGameState("gameOver")
-    playSound("gameOver")
+  const handleLevelComplete = async () => {
+    try {
+      await completeLevel(gems)
+      completeGameLevel()
+      if (currentLevel === 5) {
+        setGameState("allComplete")
+        playSound("victory")
+      } else {
+        setGameState("levelComplete")
+        playSound("victory")
+      }
+    } catch (error) {
+      console.error('Failed to complete level:', error)
+    }
   }
 
-  const handleVictory = () => {
-    setGameState("victory")
-    playSound("victory")
+  const handleExitGame = async () => {
+    try {
+      await exitGame()
+      resetGame()
+      setGameState("menu")
+    } catch (error) {
+      console.error('Failed to exit game:', error)
+    }
   }
 
   const handleGemCollected = () => {
-    collectGem()
-    updateScore(100)
+    useGameStore.getState().collectGem()
     playSound("gemCollect")
-  }
-
-  const handleTrapTriggered = () => {
-    handleGameOver()
-    playSound("trap")
-  }
-
-  const restartGame = () => {
-    resetGame()
-    setGameState("start")
-  }
-
-  const showLeaderboard = () => {
-    setGameState("leaderboard")
   }
 
   return (
@@ -151,28 +145,22 @@ export default function MineEscapeGame() {
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
 
-            <button
-              onClick={showLeaderboard}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg backdrop-blur-sm border border-purple-400/30 hover:border-purple-400/60 hover:scale-105 active:scale-95 transition-all cursor-pointer touch-manipulation"
-            >
-              <Trophy className="w-4 h-4 inline mr-2" />
-              Leaderboard
-            </button>
+
 
             <WalletConnect 
               isConnected={isConnected}
-              onConnect={() => setIsWalletConnected(true)}
-              onDisconnect={() => setIsWalletConnected(false)}
+              onConnect={() => {}}
+              onDisconnect={() => {}}
             />
           </div>
         </div>
       </motion.nav>
 
       <AnimatePresence mode="wait">
-        {/* Start Screen */}
-        {gameState === "start" && (
+        {/* Menu Screen */}
+        {gameState === "menu" && (
           <motion.div
-            key="start"
+            key="menu"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.1 }}
@@ -225,33 +213,55 @@ export default function MineEscapeGame() {
                 transition={{ delay: 0.8 }}
                 className="space-y-4"
               >
-                <button
-                  onClick={startGame}
-                  className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-xl font-bold shadow-lg hover:shadow-cyan-500/25 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer touch-manipulation"
-                >
-                  <Play className="w-6 h-6 inline mr-3" />
-                  Start Game
-                </button>
+                {!isConnected ? (
+                  <div className="p-6 bg-red-500/10 border border-red-400/30 rounded-xl">
+                    <p className="text-red-400 font-medium mb-4">Connect your wallet to start playing</p>
+                    <WalletConnect 
+                      isConnected={isConnected}
+                      onConnect={() => {}}
+                      onDisconnect={() => {}}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setGameState("levelSelect")}
+                    className="px-12 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl text-xl font-bold hover:scale-105 active:scale-95 transition-transform"
+                  >
+                    <Play className="w-6 h-6 inline mr-3" />
+                    Start Mining
+                  </button>
+                )}
                 
                 <p className="text-xs text-slate-500 mt-2">Press Enter or Space to start</p>
 
-                <div className="flex justify-center space-x-8 text-sm text-slate-400">
-                  <div className="flex items-center space-x-2">
-                    <Diamond className="w-4 h-4 text-cyan-400" />
-                    <span>Collect Gems</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="p-4 bg-white/5 rounded-lg">
+                    <Coins className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+                    <p className="text-white font-bold">Pay STT to Play</p>
+                    <p className="text-slate-400">Level 1: 1 STT, Level 2: 2 STT...</p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="w-4 h-4 text-red-400" />
-                    <span>Avoid Traps</span>
+                  <div className="p-4 bg-white/5 rounded-lg">
+                    <Diamond className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
+                    <p className="text-white font-bold">Collect Gems</p>
+                    <p className="text-slate-400">10 gems = 1 STT reward</p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-yellow-400" />
-                    <span>Beat the Clock</span>
+                  <div className="p-4 bg-white/5 rounded-lg">
+                    <Zap className="w-6 h-6 text-red-400 mx-auto mb-2" />
+                    <p className="text-white font-bold">Avoid Bombs</p>
+                    <p className="text-slate-400">Hit bomb = lose everything</p>
                   </div>
                 </div>
               </motion.div>
             </div>
           </motion.div>
+        )}
+
+        {/* Level Selection */}
+        {gameState === "levelSelect" && (
+          <LevelSelector 
+            onStartLevel={handleStartLevel}
+            onBack={() => setGameState("menu")}
+          />
         )}
 
         {/* Game Playing Screen */}
@@ -271,6 +281,9 @@ export default function MineEscapeGame() {
             >
               <div className="flex space-x-6">
                 <div className="flex items-center space-x-2">
+                  <span className="text-lg font-bold text-white">Level {currentLevel}</span>
+                </div>
+                <div className="flex items-center space-x-2">
                   <Clock className="w-5 h-5 text-yellow-400" />
                   <span className="text-xl font-bold text-yellow-400">{timeLeft}s</span>
                 </div>
@@ -278,28 +291,23 @@ export default function MineEscapeGame() {
                   <Diamond className="w-5 h-5 text-cyan-400" />
                   <span className="text-xl font-bold text-cyan-400">{gems}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Star className="w-5 h-5 text-purple-400" />
-                  <span className="text-xl font-bold text-purple-400">{score}</span>
-                </div>
               </div>
               
               <button
-                onClick={restartGame}
+                onClick={handleExitGame}
                 className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 rounded-lg text-sm cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
               >
-                <RotateCcw className="w-4 h-4 inline mr-2" />
-                Restart
+                Exit & Cash Out
               </button>
             </motion.div>
 
-            {/* 3D Game Canvas */}
+            {/* Mine Digging Game */}
             <div className="flex-1">
-              <GameCanvas
+              <MineDigger
+                level={currentLevel}
                 onGemCollected={handleGemCollected}
-                onTrapTriggered={handleTrapTriggered}
-                onVictory={handleVictory}
-                playerPosition={playerPosition}
+                onBombHit={() => triggerBomb()}
+                onLevelComplete={handleLevelComplete}
               />
             </div>
 
@@ -309,12 +317,8 @@ export default function MineEscapeGame() {
               animate={{ y: 0, opacity: 1 }}
               className="p-4 bg-black/20 backdrop-blur-sm border-t border-purple-500/20"
             >
-              <div className="flex justify-center space-x-4 text-xs md:text-sm text-slate-400 flex-wrap">
-                <span>WASD/Arrow Keys</span>
-                <span>•</span>
-                <span>Click/Touch Adjacent Cells</span>
-                <span>•</span>
-                <span>ESC to Restart</span>
+              <div className="text-sm text-slate-400 text-center">
+                Click to dig • Find gems • Avoid bombs
               </div>
             </motion.div>
           </motion.div>
@@ -342,45 +346,105 @@ export default function MineEscapeGame() {
 
               <div className="space-y-4">
                 <h2 className="text-4xl font-bold text-red-400">Game Over!</h2>
-                <p className="text-slate-300">You triggered a trap or ran out of time!</p>
+                <p className="text-slate-300">You hit a bomb or ran out of time!</p>
+                <p className="text-red-400 font-bold">All tokens and gems lost!</p>
                 
                 <div className="space-y-2 p-4 bg-white/5 rounded-lg border border-red-500/20">
                   <div className="flex justify-between">
-                    <span>Final Score:</span>
-                    <span className="font-bold text-purple-400">{score}</span>
+                    <span>Level Reached:</span>
+                    <span className="font-bold text-purple-400">{currentLevel}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Gems Collected:</span>
-                    <span className="font-bold text-cyan-400">{gems}</span>
+                    <span>Gems Lost:</span>
+                    <span className="font-bold text-red-400">{gems}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>STT Lost:</span>
+                    <span className="font-bold text-red-400">{currentLevel} STT</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <button
-                  onClick={startGame}
+                  onClick={() => {
+                    resetGame()
+                    setGameState("levelSelect")
+                  }}
                   className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
                 >
                   <Play className="w-5 h-5 inline mr-2" />
-                  Try Again
+                  Start Over (Level 1)
                 </button>
                 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={showLeaderboard}
-                  className="w-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold cursor-pointer touch-manipulation"
+                <button
+                  onClick={() => setGameState("menu")}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg font-bold cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
                 >
-                  <Trophy className="w-5 h-5 inline mr-2" />
-                  View Leaderboard
-                </motion.button>
+                  <ArrowLeft className="w-5 h-5 inline mr-2" />
+                  Back to Menu
+                </button>
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* Victory Screen */}
-        {gameState === "victory" && (
+        {/* Level Complete Screen */}
+        {gameState === "levelComplete" && (
+          <motion.div
+            key="levelComplete"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
+            className="flex items-center justify-center min-h-[calc(100vh-100px)] p-4"
+            style={{ pointerEvents: 'auto' }}
+          >
+            <div className="text-center space-y-8 max-w-md">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-24 h-24 mx-auto bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center"
+              >
+                <CheckCircle className="w-12 h-12 text-white" />
+              </motion.div>
+
+              <div className="space-y-4">
+                <h2 className="text-4xl font-bold text-green-400">Level {currentLevel} Complete!</h2>
+                <div className="p-4 bg-white/5 rounded-lg border border-green-500/20">
+                  <div className="flex justify-between mb-2">
+                    <span>Gems Collected:</span>
+                    <span className="font-bold text-cyan-400">{gems}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>STT Earned:</span>
+                    <span className="font-bold text-yellow-400">{Math.floor(gems / 10)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {currentLevel < 5 && (
+                  <button
+                    onClick={() => setGameState("levelSelect")}
+                    className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
+                  >
+                    Next Level ({currentLevel + 1} STT)
+                  </button>
+                )}
+                
+                <button
+                  onClick={handleExitGame}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
+                >
+                  Cash Out & Exit
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* All Levels Complete */}
+        {gameState === "allComplete" && (
           <motion.div
             key="victory"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -411,82 +475,51 @@ export default function MineEscapeGame() {
               </motion.div>
 
               <div className="space-y-4">
-                <h2 className="text-4xl font-bold text-yellow-400">Victory!</h2>
-                <p className="text-slate-300">You successfully escaped the mine!</p>
+                <h2 className="text-4xl font-bold text-yellow-400">Master Miner!</h2>
+                <p className="text-slate-300">You completed all 5 levels!</p>
+                <p className="text-yellow-400 font-bold">🏆 NFT Badge Earned!</p>
                 
                 <div className="space-y-2 p-4 bg-white/5 rounded-lg border border-yellow-500/20">
                   <div className="flex justify-between">
-                    <span>Final Score:</span>
-                    <span className="font-bold text-purple-400">{score}</span>
+                    <span>Total Gems:</span>
+                    <span className="font-bold text-cyan-400">{totalGemsCollected}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Gems Collected:</span>
-                    <span className="font-bold text-cyan-400">{gems}</span>
+                    <span>STT Earned:</span>
+                    <span className="font-bold text-yellow-400">{Math.floor(totalGemsCollected / 10)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Time Bonus:</span>
-                    <span className="font-bold text-yellow-400">{timeLeft * 10}</span>
+                    <span>NFT Badge:</span>
+                    <span className="font-bold text-purple-400">✅ Minted</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                {isConnected && address && (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={async () => {
-                      try {
-                        await submitScore(score + (timeLeft * 10), gems)
-                      } catch (error) {
-                        console.error('Failed to submit score:', error)
-                        alert('Failed to submit score. Make sure the contract is deployed on this network.')
-                      }
-                    }}
-                    disabled={isSubmitting}
-                    className="w-full px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-bold disabled:opacity-50 cursor-pointer touch-manipulation"
-                  >
-                    <CheckCircle className="w-5 h-5 inline mr-2" />
-                    {isSubmitting ? 'Submitting...' : isConfirmed ? 'Score Submitted!' : 'Submit to Leaderboard'}
-                  </motion.button>
-                )}
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={startGame}
-                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold cursor-pointer touch-manipulation"
+                <button
+                  onClick={() => {
+                    resetGame()
+                    setGameState("levelSelect")
+                  }}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
                 >
                   <Play className="w-5 h-5 inline mr-2" />
                   Play Again
-                </motion.button>
+                </button>
                 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={showLeaderboard}
-                  className="w-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold"
+                <button
+                  onClick={() => setGameState("menu")}
+                  className="w-full px-8 py-3 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg font-bold cursor-pointer touch-manipulation hover:scale-105 active:scale-95 transition-transform"
                 >
-                  <Trophy className="w-5 h-5 inline mr-2" />
-                  View Leaderboard
-                </motion.button>
+                  <ArrowLeft className="w-5 h-5 inline mr-2" />
+                  Back to Menu
+                </button>
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* Leaderboard Screen */}
-        {gameState === "leaderboard" && (
-          <motion.div
-            key="leaderboard"
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            className="min-h-[calc(100vh-100px)] p-4"
-          >
-            <Leaderboard onBack={() => setGameState("start")} />
-          </motion.div>
-        )}
+
       </AnimatePresence>
     </div>
   )
