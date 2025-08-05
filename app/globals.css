@@ -216,3 +216,7 @@ button:focus-visible, [role="button"]:focus-visible {
 .rainbow-kit-wrapper button:active {
   transform: scale(0.95);
 }
+
+nextjs-portal {
+  display: none;
+}
