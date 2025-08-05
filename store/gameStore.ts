@@ -78,7 +78,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       playerPosition: { x: 0, y: 0, z: 0 },
       gameStarted: true,
       hasActiveBomb: false,
-      tokensSpent: get().tokensSpent + level
+      tokensSpent: get().tokensSpent + (level * 0.1)
     })
   },
 

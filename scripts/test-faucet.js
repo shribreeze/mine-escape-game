@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-  const sttAddress = "0x0581BA6e11Ac0AEE20ED0608F4881F5c847cd16A"; // Update after deployment
+  const sttAddress = "0xe00FD78Fdb0B67961b0376512ee626911DC56a32"; // Update after deployment
   
   console.log("Getting STT tokens from faucet...");
   

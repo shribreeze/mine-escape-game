@@ -76,5 +76,50 @@ export const GAMEFI_ABI = [
   }
 ] as const
 
-export const GAMEFI_CONTRACT_ADDRESS: Address = '0x3d9b10A4AF4f055Bcc112528d77e6f80d490973f' // Update with deployed GameFi address
-export const STT_TOKEN_ADDRESS: Address = '0x0581BA6e11Ac0AEE20ED0608F4881F5c847cd16A' // Update with deployed STT address
+export const GAMEFI_CONTRACT_ADDRESS: Address = '0xa29f36B65b787e99999C567731F1085008d0bdC9'
+export const STT_TOKEN_ADDRESS: Address = '0x7089349Ff87fe87f7F6a61df9c8dF44bC3CBAA36'
+
+// STT Token ABI for approvals and balance checks
+export const STT_ABI = [
+  {
+    "inputs": [],
+    "name": "faucet",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{
+      "internalType": "address",
+      "name": "spender",
+      "type": "address"
+    }, {
+      "internalType": "uint256",
+      "name": "amount",
+      "type": "uint256"
+    }],
+    "name": "approve",
+    "outputs": [{
+      "internalType": "bool",
+      "name": "",
+      "type": "bool"
+    }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{
+      "internalType": "address",
+      "name": "account",
+      "type": "address"
+    }],
+    "name": "balanceOf",
+    "outputs": [{
+      "internalType": "uint256",
+      "name": "",
+      "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const

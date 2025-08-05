@@ -89,9 +89,9 @@ export function MineDigger({ level, onGemCollected, onBombHit, onLevelComplete }
     const cell = grid.find(c => c.id === cellId)
     if (!cell || cell.revealed) return
 
-    const newGrid = grid.map(c => 
-      c.id === cellId ? { ...c, revealed: true } : c
-    )
+    const newGrid = [...grid]
+    const cellIndex = newGrid.findIndex(c => c.id === cellId)
+    newGrid[cellIndex] = { ...newGrid[cellIndex], revealed: true }
     setGrid(newGrid)
 
     if (cell.type === 'gem') {
@@ -104,7 +104,7 @@ export function MineDigger({ level, onGemCollected, onBombHit, onLevelComplete }
         setTimeout(() => onLevelComplete(), 500)
       }
     } else if (cell.type === 'bomb') {
-      onBombHit()
+      setTimeout(() => onBombHit(), 100)
     }
   }
 
@@ -165,20 +165,19 @@ export function MineDigger({ level, onGemCollected, onBombHit, onLevelComplete }
           }}
         >
           {grid.map((cell) => (
-            <motion.div
+            <div
               key={cell.id}
               onClick={() => handleCellClick(cell.id)}
-              className={`w-8 h-8 border-2 rounded flex items-center justify-center transition-all ${getCellStyle(cell)}`}
-              whileHover={!cell.revealed ? { scale: 1.1 } : {}}
-              whileTap={!cell.revealed ? { scale: 0.9 } : {}}
-              animate={cell.revealed && cell.type === 'gem' ? { 
-                rotate: [0, 10, -10, 0],
-                scale: [1, 1.2, 1]
-              } : {}}
-              transition={{ duration: 0.3 }}
+              onTouchEnd={() => handleCellClick(cell.id)}
+              className={`w-8 h-8 border-2 rounded flex items-center justify-center transition-all select-none ${getCellStyle(cell)}`}
+              style={{ 
+                transform: cell.revealed && cell.type === 'gem' ? 'scale(1.1)' : 'scale(1)',
+                pointerEvents: 'auto',
+                touchAction: 'manipulation'
+              }}
             >
               {getCellContent(cell)}
-            </motion.div>
+            </div>
           ))}
         </div>
 

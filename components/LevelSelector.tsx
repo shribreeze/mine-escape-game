@@ -4,6 +4,8 @@ import { motion } from "framer-motion"
 import { Play, Coins, Lock, Trophy } from "lucide-react"
 import { useGameFi } from "@/hooks/useGameFi"
 import { useGameStore } from "@/store/gameStore"
+import { formatEther } from 'viem'
+import { useState } from 'react'
 
 interface LevelSelectorProps {
   onStartLevel: (level: number) => void
@@ -11,17 +13,30 @@ interface LevelSelectorProps {
 }
 
 export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
-  const { startLevel, getLevelCosts, isPending } = useGameFi()
+  const { startLevel, actuallyStartLevel, getLevelCosts, isPending, sttBalance, getTokens, isConfirmed } = useGameFi()
   const { currentLevel } = useGameStore()
   const levelCosts = getLevelCosts()
+  const balance = sttBalance ? Number(formatEther(sttBalance)) : 0
+  const [approvalStep, setApprovalStep] = useState<number | null>(null)
 
   const handleStartLevel = async (level: number) => {
     try {
-      await startLevel(level)
+      setApprovalStep(level)
+      await startLevel(level) // Approve tokens
+    } catch (error) {
+      console.error('Failed to approve tokens:', error)
+      setApprovalStep(null)
+    }
+  }
+  
+  const handleActualStart = async (level: number) => {
+    try {
+      await actuallyStartLevel(level) // Start game
       onStartLevel(level)
+      setApprovalStep(null)
     } catch (error) {
       console.error('Failed to start level:', error)
-      alert('Failed to start level. Make sure you have enough STT tokens.')
+      setApprovalStep(null)
     }
   }
 
@@ -36,9 +51,23 @@ export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
           <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
             Select Level
           </h1>
-          <p className="text-slate-300 text-lg">
+          <p className="text-slate-300 text-lg mb-4">
             Each level requires an entry fee in STT tokens. Collect gems to earn rewards!
           </p>
+          
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <div className="px-4 py-2 bg-white/10 rounded-lg">
+              <span className="text-yellow-400 font-bold">{balance.toFixed(2)} STT</span>
+            </div>
+            {balance < 5 && (
+              <button
+                onClick={getTokens}
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
+              >
+                Get Free STT
+              </button>
+            )}
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -75,7 +104,7 @@ export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-center space-x-2">
                       <Coins className="w-4 h-4 text-yellow-400" />
-                      <span className="text-yellow-400">{cost} STT</span>
+                      <span className="text-yellow-400">{cost.toFixed(1)} STT</span>
                     </div>
                     
                     <div className="text-slate-400">
@@ -88,14 +117,27 @@ export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
                   </div>
 
                   {isAvailable && !isLocked && (
-                    <button
-                      onClick={() => handleStartLevel(level)}
-                      disabled={isPending}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
-                    >
-                      <Play className="w-4 h-4 inline mr-2" />
-                      {isPending ? 'Starting...' : 'Start Level'}
-                    </button>
+                    <div className="space-y-2">
+                      {approvalStep !== level ? (
+                        <button
+                          onClick={() => handleStartLevel(level)}
+                          disabled={isPending || balance < cost}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+                        >
+                          <Play className="w-4 h-4 inline mr-2" />
+                          {balance < cost ? 'Insufficient STT' : 'Approve STT'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActualStart(level)}
+                          disabled={isPending}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+                        >
+                          <Play className="w-4 h-4 inline mr-2" />
+                          {isPending ? 'Starting...' : 'Start Level'}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -117,7 +159,7 @@ export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="text-slate-300">Entry Fee</p>
-                <p className="text-white font-bold">Level × 1 STT</p>
+                <p className="text-white font-bold">Level × 0.1 STT</p>
               </div>
               <div>
                 <p className="text-slate-300">Gem Conversion</p>

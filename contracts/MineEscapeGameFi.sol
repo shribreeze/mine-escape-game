@@ -26,7 +26,7 @@ contract MineEscapeGameFi is ERC721, Ownable {
     mapping(address => bool) public hasCompletionBadge;
     LeaderboardEntry[] public leaderboard;
     
-    uint256[] public levelEntryCosts = [1e18, 2e18, 3e18, 4e18, 5e18]; // 1-5 STT
+    uint256[] public levelEntryCosts = [1e17, 2e17, 3e17, 4e17, 5e17]; // 0.1-0.5 STT
     uint256 public constant GEMS_TO_TOKEN_RATE = 10; // 10 gems = 1 STT
     uint256 public constant MAX_LEVELS = 5;
     uint256 private badgeTokenId = 1;

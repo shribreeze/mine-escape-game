@@ -34,9 +34,12 @@ const somniaTestnet = defineChain({
     default: {
       http: ['https://dream-rpc.somnia.network'],
     },
+    public: {
+      http: ['https://dream-rpc.somnia.network'],
+    },
   },
   blockExplorers: {
-    default: { name: 'Somnia Testnet Explorer', url: 'https://shannon-explorer.somnia.network/' },
+    default: { name: 'Somnia Testnet Explorer', url: 'https://shannon-explorer.somnia.network' },
   },
   testnet: true,
 })

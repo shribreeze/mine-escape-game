@@ -238,7 +238,7 @@ export default function MineEscapeGame() {
                   <div className="p-4 bg-white/5 rounded-lg">
                     <Coins className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
                     <p className="text-white font-bold">Pay STT to Play</p>
-                    <p className="text-slate-400">Level 1: 1 STT, Level 2: 2 STT...</p>
+                    <p className="text-slate-400">Level 1: 0.1 STT, Level 2: 0.2 STT...</p>
                   </div>
                   <div className="p-4 bg-white/5 rounded-lg">
                     <Diamond className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
@@ -360,7 +360,7 @@ export default function MineEscapeGame() {
                   </div>
                   <div className="flex justify-between">
                     <span>STT Lost:</span>
-                    <span className="font-bold text-red-400">{currentLevel} STT</span>
+                    <span className="font-bold text-red-400">{(currentLevel * 0.1).toFixed(1)} STT</span>
                   </div>
                 </div>
               </div>
@@ -428,7 +428,7 @@ export default function MineEscapeGame() {
                     onClick={() => setGameState("levelSelect")}
                     className="w-full px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
                   >
-                    Next Level ({currentLevel + 1} STT)
+                    Next Level ({((currentLevel + 1) * 0.1).toFixed(1)} STT)
                   </button>
                 )}
                 
