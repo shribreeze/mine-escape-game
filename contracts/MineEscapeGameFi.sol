@@ -27,7 +27,7 @@ contract MineEscapeGameFi is ERC721, Ownable {
     LeaderboardEntry[] public leaderboard;
     
     uint256[] public levelEntryCosts = [1e17, 2e17, 3e17, 4e17, 5e17]; // 0.1-0.5 STT
-    uint256 public constant GEMS_TO_TOKEN_RATE = 10; // 10 gems = 1 STT
+    uint256 public constant GEMS_TO_TOKEN_RATE = 10; // 10 gems = 1 STT (but we'll give proportional rewards)
     uint256 public constant MAX_LEVELS = 5;
     uint256 private badgeTokenId = 1;
     
@@ -48,10 +48,13 @@ contract MineEscapeGameFi is ERC721, Ownable {
         
         sttToken.transferFrom(msg.sender, address(this), levelEntryCosts[level - 1]);
         
-        if (level == 1) {
-            gameSessions[msg.sender] = GameSession(1, 0, true, levelEntryCosts[0]);
+        if (level == 1 || !gameSessions[msg.sender].isActive) {
+            // Create new session for level 1 or if no active session
+            gameSessions[msg.sender] = GameSession(level, 0, true, levelEntryCosts[level - 1]);
         } else {
+            // Continue existing session
             gameSessions[msg.sender].currentLevel = level;
+            gameSessions[msg.sender].isActive = true;
             gameSessions[msg.sender].totalTokensSpent += levelEntryCosts[level - 1];
         }
         
@@ -64,6 +67,9 @@ contract MineEscapeGameFi is ERC721, Ownable {
         
         session.gemsCollected += gems;
         
+        // Always update leaderboard with current progress
+        updateLeaderboard(msg.sender, session.currentLevel, session.gemsCollected);
+        
         if (session.currentLevel == MAX_LEVELS) {
             // Game completed - mint badge
             if (!hasCompletionBadge[msg.sender]) {
@@ -73,14 +79,13 @@ contract MineEscapeGameFi is ERC721, Ownable {
                 badgeTokenId++;
             }
             
-            // Convert gems to tokens
-            uint256 tokenReward = session.gemsCollected / GEMS_TO_TOKEN_RATE * 1e18;
+            // Convert gems to tokens (proportional rewards)
+            uint256 tokenReward = (session.gemsCollected * 1e18) / GEMS_TO_TOKEN_RATE;
             if (tokenReward > 0) {
                 sttToken.transfer(msg.sender, tokenReward);
                 emit GemsConverted(msg.sender, session.gemsCollected, tokenReward);
             }
             
-            updateLeaderboard(msg.sender, session.currentLevel, session.gemsCollected);
             delete gameSessions[msg.sender];
         }
         
@@ -102,8 +107,8 @@ contract MineEscapeGameFi is ERC721, Ownable {
         // Add current level gems to total
         session.gemsCollected += gems;
         
-        // Convert gems to tokens
-        uint256 tokenReward = session.gemsCollected / GEMS_TO_TOKEN_RATE * 1e18;
+        // Convert gems to tokens (proportional rewards)
+        uint256 tokenReward = (session.gemsCollected * 1e18) / GEMS_TO_TOKEN_RATE;
         if (tokenReward > 0) {
             sttToken.transfer(msg.sender, tokenReward);
             emit GemsConverted(msg.sender, session.gemsCollected, tokenReward);
@@ -114,12 +119,41 @@ contract MineEscapeGameFi is ERC721, Ownable {
     }
     
     function updateLeaderboard(address player, uint256 level, uint256 gems) internal {
-        // Simple leaderboard - keep top 100
-        leaderboard.push(LeaderboardEntry(player, level, gems, block.timestamp));
+        // Check if player already exists in leaderboard
+        bool found = false;
+        for (uint256 i = 0; i < leaderboard.length; i++) {
+            if (leaderboard[i].player == player) {
+                // Update existing entry if better
+                if (level > leaderboard[i].maxLevel || 
+                    (level == leaderboard[i].maxLevel && gems > leaderboard[i].totalGems)) {
+                    leaderboard[i].maxLevel = level;
+                    leaderboard[i].totalGems = gems;
+                    leaderboard[i].timestamp = block.timestamp;
+                }
+                found = true;
+                break;
+            }
+        }
         
-        // Sort by level then gems (simplified)
+        // Add new entry if player not found
+        if (!found) {
+            leaderboard.push(LeaderboardEntry(player, level, gems, block.timestamp));
+        }
+        
+        // Keep only top 100 entries
         if (leaderboard.length > 100) {
-            // Remove lowest entry (simplified)
+            // Find and remove the lowest scoring entry
+            uint256 lowestIndex = 0;
+            for (uint256 i = 1; i < leaderboard.length; i++) {
+                if (leaderboard[i].maxLevel < leaderboard[lowestIndex].maxLevel ||
+                    (leaderboard[i].maxLevel == leaderboard[lowestIndex].maxLevel && 
+                     leaderboard[i].totalGems < leaderboard[lowestIndex].totalGems)) {
+                    lowestIndex = i;
+                }
+            }
+            
+            // Move last element to lowest position and pop
+            leaderboard[lowestIndex] = leaderboard[leaderboard.length - 1];
             leaderboard.pop();
         }
     }

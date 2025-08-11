@@ -31,7 +31,12 @@ export default function MineEscapeGame() {
   const [gameState, setGameState] = useState<GameState>("menu")
   const [soundEnabled, setSoundEnabled] = useState(true)
   const { address, isConnected } = useAccount()
-  const { gameSession, startLevel, completeLevel, failGame, exitGame, isPending, isConfirmed } = useGameFi()
+  const { gameSession, startLevel, completeLevel, failGame, exitGame, isPending, isConfirmed, refetchSession } = useGameFi()
+  
+  // Debug: Log game session changes
+  useEffect(() => {
+    console.log('Game session updated:', gameSession)
+  }, [gameSession])
   
   useEffect(() => {
     if (isConfirmed) {
@@ -78,7 +83,7 @@ export default function MineEscapeGame() {
 
   const handleStartLevel = async (level: number) => {
     try {
-      await startLevel(level)
+      // This is called from LevelSelector after approval and startLevel contract call
       startGameLevel(level)
       setGameState("playing")
       playSound("start")
@@ -106,12 +111,29 @@ export default function MineEscapeGame() {
   const handleExitGame = async () => {
     try {
       console.log('Exiting game with gems:', gems)
+      console.log('Current level:', currentLevel)
+      console.log('Game session before exit:', gameSession)
+      
+      if (gems === 0) {
+        alert('No gems to cash out!')
+        resetGame()
+        setGameState("menu")
+        return
+      }
+      
+      // Refetch session before exit
+      await refetchSession()
+      console.log('Game session after refetch:', gameSession)
+      
       await exitGame(gems)
       
-      const sttEarned = Math.floor(gems / 10 * 10) / 10
-      if (sttEarned > 0) {
-        alert(`Success! You earned ${sttEarned} STT from ${gems} gems!`)
-      }
+      const sttEarned = (gems / 10).toFixed(1)
+      alert(`Success! You earned ${sttEarned} STT from ${gems} gems!`)
+      
+      // Refresh balances after transaction
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
       
       resetGame()
       setGameState("menu")

@@ -76,8 +76,8 @@ export const GAMEFI_ABI = [
   }
 ] as const
 
-export const GAMEFI_CONTRACT_ADDRESS: Address = '0x3799325E764463655A27C4880E7A9Ee2bC7c5Fa9'
-export const STT_TOKEN_ADDRESS: Address = '0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8'
+export const GAMEFI_CONTRACT_ADDRESS: Address = '0x9B4bF5712a81C8CA2e0575b3D1e1c9e632a3f777'
+export const STT_TOKEN_ADDRESS: Address = '0xD646e62350cbd1dC9c5cB92CF4175115ca0D362a'
 
 // STT Token ABI for approvals and balance checks
 export const STT_ABI = [

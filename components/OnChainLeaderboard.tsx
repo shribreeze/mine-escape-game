@@ -11,12 +11,20 @@ interface OnChainLeaderboardProps {
 }
 
 export function OnChainLeaderboard({ onBack }: OnChainLeaderboardProps) {
-  // Read leaderboard from contract
-  const { data: leaderboardData, isLoading } = useReadContract({
+  // Read leaderboard from contract with auto-refresh
+  const { data: leaderboardData, isLoading, refetch } = useReadContract({
     address: GAMEFI_CONTRACT_ADDRESS,
     abi: GAMEFI_ABI,
     functionName: 'getLeaderboard',
+    query: {
+      refetchInterval: 5000, // Refresh every 5 seconds
+    }
   })
+  
+  // Manual refresh function
+  const handleRefresh = () => {
+    refetch()
+  }
 
   const leaderboard = leaderboardData || []
 
@@ -62,6 +70,12 @@ export function OnChainLeaderboard({ onBack }: OnChainLeaderboardProps) {
           <div className="text-center py-12">
             <div className="animate-spin w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-slate-400">Loading leaderboard from blockchain...</p>
+            <button
+              onClick={handleRefresh}
+              className="mt-4 px-4 py-2 bg-cyan-500 rounded-lg hover:bg-cyan-600 transition-colors"
+            >
+              Refresh
+            </button>
           </div>
         ) : leaderboard.length === 0 ? (
           <div className="text-center py-12">
@@ -162,13 +176,21 @@ export function OnChainLeaderboard({ onBack }: OnChainLeaderboardProps) {
             </div>
           </div>
 
-          <button
-            onClick={onBack}
-            className="px-8 py-3 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
-          >
-            <ArrowLeft className="w-5 h-5 inline mr-2" />
-            Back to Game
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={handleRefresh}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
+            >
+              🔄 Refresh
+            </button>
+            <button
+              onClick={onBack}
+              className="px-8 py-3 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform"
+            >
+              <ArrowLeft className="w-5 h-5 inline mr-2" />
+              Back to Game
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>

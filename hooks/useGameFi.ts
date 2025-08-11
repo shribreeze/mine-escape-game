@@ -46,10 +46,9 @@ export function useGameFi() {
     }
   }
 
-  const startLevel = async (level: number) => {
+  const approveTokens = async () => {
     await ensureCorrectNetwork()
     
-    // Approve large amount to avoid repeated approvals
     const approvalAmount = parseEther('1000') // Approve 1000 STT
     
     writeContract({
@@ -60,7 +59,7 @@ export function useGameFi() {
     })
   }
   
-  const actuallyStartLevel = async (level: number) => {
+  const startLevel = async (level: number) => {
     await ensureCorrectNetwork()
     
     writeContract({
@@ -95,6 +94,9 @@ export function useGameFi() {
   const exitGame = async (gems: number) => {
     await ensureCorrectNetwork()
     
+    // Refetch session to get latest state
+    await refetchSession()
+    
     writeContract({
       address: GAMEFI_CONTRACT_ADDRESS,
       abi: GAMEFI_ABI,
@@ -108,8 +110,9 @@ export function useGameFi() {
   return {
     gameSession,
     sttBalance,
+    approveTokens,
     startLevel,
-    actuallyStartLevel,
+
     completeLevel,
     failGame,
     exitGame,

@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-  const sttAddress = "0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8";
-  const gamefiAddress = "0x3799325E764463655A27C4880E7A9Ee2bC7c5Fa9";
+  const sttAddress = "0x3Fb2a6c13FB63f9F2e56Cc8C382B347267d59943";
+  const gamefiAddress = "0x9A7cA818Ac5b1D2e0168648Ff12223b8caCd34fd";
   
   console.log("Funding GameFi contract with STT tokens...");
   

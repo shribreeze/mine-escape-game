@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-  const sttAddress = "0x7089349Ff87fe87f7F6a61df9c8dF44bC3CBAA36";
-  const gamefiAddress = "0xa29f36B65b787e99999C567731F1085008d0bdC9";
+  const sttAddress = "0xD66B19387aDBB2ccCD941739001227Ce18E87D62";
+  const gamefiAddress = "0x719A228501606Af476BeC289902d42817C4871Bc";
   
   console.log("Checking balances...");
   

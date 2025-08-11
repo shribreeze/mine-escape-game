@@ -13,30 +13,53 @@ interface LevelSelectorProps {
 }
 
 export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
-  const { startLevel, actuallyStartLevel, getLevelCosts, isPending, sttBalance, getTokens, isConfirmed } = useGameFi()
+  const { approveTokens, startLevel, getLevelCosts, isPending, sttBalance, getTokens, isConfirmed, refetchSession } = useGameFi()
   const { currentLevel } = useGameStore()
   const levelCosts = getLevelCosts()
   const balance = sttBalance ? Number(formatEther(sttBalance)) : 0
   const [approvalStep, setApprovalStep] = useState<number | null>(null)
+  const [startingLevel, setStartingLevel] = useState<number | null>(null)
 
-  const handleStartLevel = async (level: number) => {
+  const handleApproveTokens = async (level: number) => {
     try {
       setApprovalStep(level)
-      await startLevel(level) // Approve tokens
+      await approveTokens() // Approve tokens
     } catch (error) {
       console.error('Failed to approve tokens:', error)
       setApprovalStep(null)
     }
   }
   
-  const handleActualStart = async (level: number) => {
+  const handleStartLevel = async (level: number) => {
     try {
-      await actuallyStartLevel(level) // Start game
+      setStartingLevel(level)
+      await startLevel(level) // Start game
+      
+      // Wait for game session to become active
+      console.log('Waiting for game session to become active...')
+      let attempts = 0
+      while (attempts < 20) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        const currentSession = await refetchSession()
+        if (currentSession?.isActive) {
+          console.log('Game session is now active!')
+          onStartLevel(level)
+          setApprovalStep(null)
+          setStartingLevel(null)
+          return
+        }
+        attempts++
+      }
+      
+      // If still not active after 20 seconds, proceed anyway
+      console.log('Session not active yet, but proceeding...')
       onStartLevel(level)
       setApprovalStep(null)
+      setStartingLevel(null)
     } catch (error) {
       console.error('Failed to start level:', error)
       setApprovalStep(null)
+      setStartingLevel(null)
     }
   }
 
@@ -118,9 +141,17 @@ export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
 
                   {isAvailable && !isLocked && (
                     <div className="space-y-2">
-                      {approvalStep !== level ? (
+                      {startingLevel === level ? (
                         <button
-                          onClick={() => handleStartLevel(level)}
+                          disabled={true}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold opacity-50 cursor-not-allowed"
+                        >
+                          <Play className="w-4 h-4 inline mr-2 animate-spin" />
+                          Starting Game...
+                        </button>
+                      ) : approvalStep !== level ? (
+                        <button
+                          onClick={() => handleApproveTokens(level)}
                           disabled={isPending || balance < cost}
                           className="w-full px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
                         >
@@ -129,12 +160,12 @@ export function LevelSelector({ onStartLevel, onBack }: LevelSelectorProps) {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleActualStart(level)}
+                          onClick={() => handleStartLevel(level)}
                           disabled={isPending}
                           className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-bold hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
                         >
                           <Play className="w-4 h-4 inline mr-2" />
-                          {isPending ? 'Starting...' : 'Start Level'}
+                          {isPending ? 'Confirming...' : 'Start Level'}
                         </button>
                       )}
                     </div>

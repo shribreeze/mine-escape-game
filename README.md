@@ -9,8 +9,8 @@ Mine & Escape is a multi-level survival GameFi experience where players pay STT 
 ## 🚀 Live Game
 
 **Contract Addresses (Somnia Testnet):**
-- **STT Token**: `0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8`
-- **GameFi Contract**: `0x3799325E764463655A27C4880E7A9Ee2bC7c5Fa9`
+- **STT Token**: `0x629a3448E887a61c4eD8A85634bFF21aeB16EC3E`
+- **GameFi Contract**: `0xd37FbBB7105406b7ed9bD845F12EC4AA9066B33C`
 - **Network**: Somnia Testnet (Chain ID: 50312)
 
 ## 💰 GameFi Tokenomics
@@ -126,7 +126,7 @@ npx hardhat run scripts/test-faucet.js --network somniaTestnet
    - Symbol: STT
 
 2. **Add STT Token** to wallet:
-   - Address: `0xBC62C6a497F445Ae2FD9967270b5A0a4301DA3E8`
+   - Address: `0x629a3448E887a61c4eD8A85634bFF21aeB16EC3E`
    - Symbol: STT
    - Decimals: 18
 

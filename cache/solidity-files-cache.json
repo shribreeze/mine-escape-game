@@ -37,8 +37,8 @@
       ]
     },
     "/home/sameergautam/Projects/Mine and Escape/mine-escape-game/contracts/MineEscapeGameFi.sol": {
-      "lastModificationDate": 1754426013378,
-      "contentHash": "073d7add75eac715e4b29b25d92004d9",
+      "lastModificationDate": 1754674998744,
+      "contentHash": "f127ab149f057693121b6476319cf8c0",
       "sourceName": "contracts/MineEscapeGameFi.sol",
       "solcConfig": {
         "version": "0.8.19",
