@@ -9,8 +9,8 @@ Mine & Escape is a multi-level survival GameFi experience where players pay STT 
 ## 🚀 Live Game
 
 **Contract Addresses (Somnia Testnet):**
-- **STT Token**: `0x629a3448E887a61c4eD8A85634bFF21aeB16EC3E`
-- **GameFi Contract**: `0xd37FbBB7105406b7ed9bD845F12EC4AA9066B33C`
+- **STT Token**: `0xD646e62350cbd1dC9c5cB92CF4175115ca0D362a`
+- **GameFi Contract**: `0x9B4bF5712a81C8CA2e0575b3D1e1c9e632a3f777`
 - **Network**: Somnia Testnet (Chain ID: 50312)
 
 ## 💰 GameFi Tokenomics
@@ -23,7 +23,8 @@ Mine & Escape is a multi-level survival GameFi experience where players pay STT 
 - **Level 5**: 0.5 STT
 
 ### Rewards
-- **Gem Conversion**: 10 gems = 1 STT
+- **Gem Conversion**: 1 gem = 0.1 STT (proportional rewards)
+- **Level 1 Max**: 8 gems = 0.8 STT reward
 - **NFT Badge**: Complete all 5 levels to earn soulbound NFT
 - **On-Chain Leaderboard**: Permanent ranking system
 
@@ -126,7 +127,7 @@ npx hardhat run scripts/test-faucet.js --network somniaTestnet
    - Symbol: STT
 
 2. **Add STT Token** to wallet:
-   - Address: `0x629a3448E887a61c4eD8A85634bFF21aeB16EC3E`
+   - Address: `0xD646e62350cbd1dC9c5cB92CF4175115ca0D362a`
    - Symbol: STT
    - Decimals: 18
 
@@ -188,7 +189,7 @@ struct LeaderboardEntry {
 ### Key Features
 - **Sequential Level Progression** - Must complete levels in order
 - **Token Balance Verification** - Checks STT balance before entry
-- **Automatic Gem Conversion** - 10 gems = 1 STT payout
+- **Proportional Gem Conversion** - 1 gem = 0.1 STT payout
 - **Leaderboard Tracking** - Permanent on-chain records
 - **NFT Badge Minting** - Soulbound completion certificate
 
